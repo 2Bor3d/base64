@@ -25,11 +25,11 @@ static char decoding_table[] = {
     ['2'] = 54, ['3'] = 55, ['4'] = 56, ['5'] = 57, ['6'] = 58, ['7'] = 59,
     ['8'] = 60, ['9'] = 61, ['+'] = 62, ['/'] = 63};
 
-size_t get_encoded_length(size_t length) {
+size_t b64_get_encoded_length(size_t length) {
   return (size_t)ceil((long double)length / 3.0) * 4;
 }
 
-int encode(char *output, char *input) {
+int b64_encode(char *output, char *input) {
   if (strlen(input) > 4294967295) {
     printf("Block too big. Maximum block size is 4294967295 characters.");
     return 1;
@@ -52,24 +52,24 @@ int encode(char *output, char *input) {
       }
     }
   }
-  output[get_encoded_length(length)] = '\0';
+  output[b64_get_encoded_length(length)] = '\0';
   return 0;
 }
 
-int encode_unsigned_int(char *output, unsigned int *input, size_t size) {
+int b64_encode_unsigned_int(char *output, unsigned int *input, size_t size) {
   char *converted_input = (char *)calloc(size * 8, sizeof(char));
   for (unsigned int i = 0; i < size; i++) {
     for (unsigned int b = 0; b < 8; b++) {
       converted_input[i * 8 + b] = input[i] >> (24 - 8 * b) & 0xF;
     }
   }
-  int status = encode(output, converted_input);
+  int status = b64_encode(output, converted_input);
   free(converted_input);
 
   return status;
 }
 
-int decode(char *output, char *input) {
+int b64_decode(char *output, char *input) {
   if (strlen(input) > 4294967295) {
     printf("Block too big. Maximum block size is 4294967295 characters.");
     return 1;
@@ -80,7 +80,6 @@ int decode(char *output, char *input) {
     return 2;
   }
   unsigned int block = 0;
-  printf("%u\n", length);
   for (unsigned int i = 0; i < length; i += 4) {
     block = 0;
     for (unsigned int b = 0; b < 4; b++) {
@@ -97,9 +96,9 @@ int decode(char *output, char *input) {
   return 0;
 }
 
-int decode_unsigned_int(unsigned int *output, char *input) {
+int b64_decode_unsigned_int(unsigned int *output, char *input) {
   char *decoded_input = (char *)calloc(strlen(input), sizeof(char));
-  int status_code = decode(decoded_input, input);
+  int status_code = b64_decode(decoded_input, input);
   if (status_code != 0) {
     free(decoded_input);
     return status_code;
@@ -107,22 +106,5 @@ int decode_unsigned_int(unsigned int *output, char *input) {
   for (unsigned int i = 0; i < strlen(input); i++) {
     output[i / 4] |= (unsigned int)decoded_input[i] << (24 - i % 4 * 8);
   }
-  return 0;
-}
-
-int main() {
-  char *output = (char *)calloc(1024, sizeof(char));
-  char *result = (char *)calloc(1024, sizeof(char));
-  char input[] = "Man, I have to write a bit of text again, to check if this "
-                 "base64 implementation can really handle input of 'unknown' "
-                 "size. But I'm really confident ^^..";
-  encode(output, input);
-  printf("-> %s\n", output);
-  decode(result, output);
-  printf("-> %s\n", result);
-
-  free(output);
-  free(result);
-
   return 0;
 }
